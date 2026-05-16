@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halifax Transit Smart Proximity Tracker</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 360px; text-align: center; }
+        h2 { color: #1a3a5f; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
+        button:hover { background: #0056b3; }
+        #status { margin-top: 15px; font-size: 13px; color: #666; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Halifax Transit Alert</h2>
+    <input type="text" id="stopId" placeholder="Enter Stop ID (e.g., 6084)">
+    <input type="text" id="routeId" placeholder="Enter Route ID (e.g., 1)">
+    <button onclick="requestAndRegisterAlert()">Set 5-Min Alert</button>
+    <p id="status">Enter your route parameters to begin tracking.</p>
+</div>
+
+<script>
+    const API_ENDPOINT = "https://YOUR_API_GATEWAY_URL.amazonaws.com/prod/alerts";
+    const PUBLIC_VAPID_KEY = "YOUR_PUBLIC_VAPID_KEY_HERE";
+
+    // Helper utility to safely convert VAPID keys to a browser-compatible Uint8Array format
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
+    async function requestAndRegisterAlert() {
+        const stopId = document.getElementById('stopId').value.trim();
+        const routeId = document.getElementById('routeId').value.trim();
+        const statusText = document.getElementById('status');
+
+        if (!stopId || !routeId) {
+            statusText.innerText = "⚠️ Missing required Stop or Route inputs.";
+            return;
+        }
+
+        try {
+            statusText.innerText = "Requesting browser notification permissions...";
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                statusText.innerText = "❌ System permission denied by browser settings.";
+                return;
+            }
+
+            statusText.innerText = "Registering device service workers...";
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            
+            statusText.innerText = "Negotiating handshake with push server...";
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
+            });
+
+            statusText.innerText = "Saving tracking criteria to secure server storage...";
+
+            // Construct the exact primary key structures matching your DynamoDB configuration schema
+            const databasePayload = {
+                pk: `${stopId}_${routeId}`,
+                sk: `USER_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                endpoint_url: subscription.endpoint,
+                auth_key: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth')))),
+                p256dh_key: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh'))))
+            };
+
+            const response = await fetch(API_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(databasePayload)
+            });
+
+            if (response.ok) {
+                statusText.innerText = `✅ Tracking active! You will be alerted 5 mins before Route ${routeId} reaches Stop ${stopId}.`;
+            } else {
+                statusText.innerText = "❌ Registration rejected by database controller.";
+            }
+
+        } catch (error) {
+            console.error(error);
+            statusText.innerText = `❌ Error initializing alert infrastructure: ${error.message}`;
+        }
+    }
+</script>
+</body>
+</html>

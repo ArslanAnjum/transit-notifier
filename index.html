@@ -8,10 +8,9 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 360px; text-align: center; }
         h2 { color: #1a3a5f; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; background-color: white; }
         button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
         button:hover { background: #0056b3; }
-        id { margin-top: 15px; font-size: 13px; color: #666; font-weight: 500; }
         #status { margin-top: 15px; font-size: 13px; color: #666; font-weight: 500; }
     </style>
 </head>
@@ -19,15 +18,55 @@
 
 <div class="card">
     <h2>Halifax Transit Alert</h2>
-    <input type="text" id="stopId" placeholder="Enter Stop ID (e.g., 6084)">
-    <input type="text" id="routeId" placeholder="Enter Route ID (e.g., 1)">
+    
+    <!-- Stop ID Dropdown -->
+    <select id="stopId" onchange="updateRouteDropdown()">
+        <option value="">-- Select a Stop ID --</option>
+        <option value="6084">Stop 6084 (Barrington St)</option>
+        <option value="7001">Stop 7001 (Mumford Terminal)</option>
+        <option value="8220">Stop 8220 (Dartmouth Crossing)</option>
+    </select>
+
+    <!-- Route ID Dropdown (Starts disabled until Stop is chosen) -->
+    <select id="routeId" disabled>
+        <option value="">-- Select a Route ID --</option>
+    </select>
+
     <button onclick="requestAndRegisterAlert()">Set 5-Min Alert</button>
-    <p id="status">Enter your route parameters to begin tracking.</p>
+    <p id="status">Select your route parameters to begin tracking.</p>
 </div>
 
 <script>
+
+    // Import the massive transit dataset from its isolated file
+    import transitData from './transitData.js';
+    
     const API_ENDPOINT = "https://wnxu2jwhfgfopotnnwrtsgjeum0pzwoi.lambda-url.ca-central-1.on.aws/";
     const PUBLIC_VAPID_KEY = "BDZEQSMZKkKmAhr1bIZUBN7TrQBQS53hyhXLCEF4Pi0LidSKeCpO2ozy8WYuG38ephBxoaVYGEsoQlpKvurGVRg";
+
+    // Dynamically updates the Route dropdown based on the selected Stop
+    function updateRouteDropdown() {
+        const stopSelect = document.getElementById('stopId');
+        const routeSelect = document.getElementById('routeId');
+        const selectedStop = stopSelect.value;
+
+        // Clear existing options
+        routeSelect.innerHTML = '<option value="">-- Select a Route ID --</option>';
+
+        if (selectedStop && transitData[selectedStop]) {
+            // Enable dropdown and populate relevant routes
+            routeSelect.disabled = false;
+            transitData[selectedStop].forEach(route => {
+                const option = document.createElement('option');
+                option.value = route;
+                option.textContent = `Route ${route}`;
+                routeSelect.appendChild(option);
+            });
+        } else {
+            // Disable dropdown if no valid stop is selected
+            routeSelect.disabled = true;
+        }
+    }
 
     // Helper utility to safely convert VAPID keys to a browser-compatible Uint8Array format
     function urlBase64ToUint8Array(base64String) {
@@ -45,7 +84,6 @@
     function getOrCreateBrowserId() {
         let browserId = localStorage.getItem('transit_browser_id');
         if (!browserId) {
-            // Generate a unique ID structure once for this device/browser instance
             browserId = `USER_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
             localStorage.setItem('transit_browser_id', browserId);
         }
@@ -53,12 +91,12 @@
     }
 
     async function requestAndRegisterAlert() {
-        const stopId = document.getElementById('stopId').value.trim();
-        const routeId = document.getElementById('routeId').value.trim();
+        const stopId = document.getElementById('stopId').value;
+        const routeId = document.getElementById('routeId').value;
         const statusText = document.getElementById('status');
 
         if (!stopId || !routeId) {
-            statusText.innerText = "⚠️ Missing required Stop or Route inputs.";
+            statusText.innerText = "⚠️ Missing required Stop or Route selection.";
             return;
         }
 
@@ -96,10 +134,8 @@
 
             statusText.innerText = "Saving tracking criteria to secure server storage...";
 
-            // Retrieve the stable browser user identifier
             const browserUserId = getOrCreateBrowserId();
 
-            // Construct the payload using the persistent sk to prevent database row duplication
             const databasePayload = {
                 pk: `${stopId}_${routeId}`,
                 sk: browserUserId,

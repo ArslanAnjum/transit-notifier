@@ -20,6 +20,9 @@
             --text-muted: #64748b;
             --success: #10b981;
             --error: #ef4444;
+            --delete-bg: #fee2e2;
+            --delete-text: #dc2626;
+            --delete-hover: #b91c1c;
         }
 
         body {
@@ -35,7 +38,6 @@
             align-items: center;
         }
 
-        /* Responsive Core Grid Wrapper */
         .app-container {
             display: flex;
             flex-direction: column;
@@ -45,7 +47,6 @@
             margin: 0 auto;
         }
 
-        /* App Title Header Banner */
         .app-header {
             text-align: center;
             margin-bottom: 8px;
@@ -63,7 +64,6 @@
             font-size: 15px;
         }
 
-        /* Adaptive Side-by-Side Content Grid */
         .main-layout {
             display: grid;
             grid-template-columns: 1fr;
@@ -132,7 +132,7 @@
             background: #f8fafc;
         }
 
-        /* Dynamic Loading, Empty and Alert Elements */
+        /* Revised Dashboard Alert Item with Interactive Layout Controls */
         .alert-item {
             background: var(--card-bg);
             border-radius: 12px;
@@ -143,10 +143,20 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: transform 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        .alert-item:hover { transform: translateY(-2px); }
+        .alert-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px -2px rgba(0,0,0,0.05);
+        }
         .alert-info-title { font-weight: 700; color: var(--dark-blue); font-size: 15px; }
+
+        .alert-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
         .alert-tag {
             font-size: 11px;
             font-weight: 700;
@@ -157,7 +167,28 @@
         .tag-active { background: #d1fae5; color: #065f46; }
         .tag-inactive { background: #fee2e2; color: #991b1b; }
 
-        /* Custom Override Overlays for Tom Select Styling */
+        /* Small Action Delete Button */
+        .btn-delete {
+            background: var(--delete-bg);
+            color: var(--delete-text);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: none;
+            width: auto;
+            transition: background 0.2s, color 0.2s;
+        }
+        .btn-delete:hover {
+            background: var(--delete-text);
+            color: white;
+        }
+        .btn-delete:active {
+            transform: scale(0.95);
+        }
+
         .ts-control {
             border-radius: 8px !important;
             padding: 12px !important;
@@ -171,7 +202,6 @@
             cursor: not-allowed;
         }
 
-        /* Responsive Breakpoints */
         @media (min-width: 680px) {
             .main-layout {
                 grid-template-columns: 1.1fr 0.9fr;
@@ -223,6 +253,7 @@
 
     const API_ENDPOINT = "https://wnxu2jwhfgfopotnnwrtsgjeum0pzwoi.lambda-url.ca-central-1.on.aws/";
     const ALERTS_ENDPOINT = "https://l7srhnplybhzagyehgedib246y0rvmem.lambda-url.ca-central-1.on.aws/";
+    const DELETE_ENDPOINT = "https://bvdsmrpxu2sw3uyqduczxxvyyq0xshms.lambda-url.ca-central-1.on.aws/";
     const PUBLIC_VAPID_KEY = "BDZEQSMZKkKmAhr1bIZUBN7TrQBQS53hyhXLCEF4Pi0LidSKeCpO2ozy8WYuG38ephBxoaVYGEsoQlpKvurGVRg";
 
     let stopSearchControl;
@@ -231,7 +262,8 @@
     document.getElementById('submitBtn').addEventListener('click', requestAndRegisterAlert);
     window.addEventListener('DOMContentLoaded', fetchAndDisplayAlerts);
 
-    initializeSearchDropdowns();
+    // Attach event scoping delegation directly onto container instances for deletion mechanics
+    document.getElementById('alertsContainer').addEventListener('click', handleAlertContainerClick);
 
     function initializeSearchDropdowns() {
         const allStops = Object.keys(transitData).sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
@@ -258,6 +290,8 @@
         });
         routeSearchControl.disable();
     }
+
+    initializeSearchDropdowns();
 
     function updateRouteDropdownOptions(selectedStop) {
         routeSearchControl.clear();
@@ -362,7 +396,7 @@
             if (response.ok) {
                 statusText.style.color = "var(--success)";
                 statusText.innerText = `✅ Tracking active! You'll be alerted 5 mins before Route ${routeId} reaches Stop ${stopId}.`;
-                fetchAndDisplayAlerts(); // Refresh dynamic list view instantly
+                fetchAndDisplayAlerts();
             } else {
                 statusText.style.color = "var(--error)";
                 statusText.innerText = "❌ Registration rejected by database controller.";
@@ -395,19 +429,62 @@
                 return;
             }
 
+            // Map the layout payload injecting explicit data configurations inside the action elements
             alertsContainer.innerHTML = alerts.map(alert => `
                 <div class="alert-item">
                     <div>
                         <div class="alert-info-title">Stop ${alert.stop_id}</div>
                         <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Route ${alert.route_id}</div>
                     </div>
-                    <span class="alert-tag ${alert.status ? 'tag-active' : 'tag-inactive'}">
-                        ${alert.status ? 'Active' : 'Inactive'}
-                    </span>
+                    <div class="alert-actions">
+                        <span class="alert-tag ${alert.status ? 'tag-active' : 'tag-inactive'}">
+                            ${alert.status ? 'Active' : 'Inactive'}
+                        </span>
+                        <button class="btn-delete" data-pk="${alert.stop_id}_${alert.route_id}" data-sk="${browserUserId}">
+                            Delete
+                        </button>
+                    </div>
                 </div>
             `).join('');
         } catch (e) {
-            alertsContainer.innerHTML = '<div style="text-align:center;color:var(--error);font-size:14px;padding:20px;">⚠️ Error loading dynamic active tracking watch list feed.</div>';
+            alertsContainer.innerHTML = '<div style="text-align:center;color:var(--error);font-size:14px;padding:20px;">⚠️ Error loading active tracking watchlist feed.</div>';
+        }
+    }
+
+    // Handles the container's interactive event clicks, executing deletions when buttons are targeted
+    async function handleAlertContainerClick(e) {
+        if (!e.target.classList.contains('btn-delete')) return;
+
+        const button = e.target;
+        const pk = button.getAttribute('data-pk');
+        const sk = button.getAttribute('data-sk');
+
+        if (!confirm("Are you sure you want to remove this transit proximity alert tracker?")) return;
+
+        const originalText = button.innerText;
+        button.innerText = "Removing...";
+        button.disabled = true;
+
+        try {
+            const response = await fetch(DELETE_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pk, sk })
+            });
+
+            if (response.ok) {
+                // Instantly remove from view array on success
+                fetchAndDisplayAlerts();
+            } else {
+                alert("Failed to delete the alert from server context.");
+                button.innerText = originalText;
+                button.disabled = false;
+            }
+        } catch (err) {
+            console.error(err);
+            alert(`Error communicating deletion: ${err.message}`);
+            button.innerText = originalText;
+            button.disabled = false;
         }
     }
 </script>

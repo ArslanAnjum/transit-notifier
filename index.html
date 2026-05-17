@@ -20,22 +20,22 @@
     <h2>Halifax Transit Alert</h2>
     
     <!-- Stop ID Dropdown -->
-    <select id="stopId" onchange="updateRouteDropdown()">
+    <select id="stopId">
         <option value="">-- Select a Stop ID --</option>
         <option value="6084">Stop 6084 (Barrington St)</option>
         <option value="7001">Stop 7001 (Mumford Terminal)</option>
         <option value="8220">Stop 8220 (Dartmouth Crossing)</option>
     </select>
 
-    <!-- Route ID Dropdown (Starts disabled until Stop is chosen) -->
+    <!-- Route ID Dropdown -->
     <select id="routeId" disabled>
         <option value="">-- Select a Route ID --</option>
     </select>
 
-    <button onclick="requestAndRegisterAlert()">Set 5-Min Alert</button>
+    <button id="submitBtn">Set 5-Min Alert</button>
     <p id="status">Select your route parameters to begin tracking.</p>
 </div>
-
+    
 <script>
 
     // Import the massive transit dataset from its isolated file

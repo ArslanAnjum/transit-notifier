@@ -19,12 +19,9 @@
 <div class="card">
     <h2>Halifax Transit Alert</h2>
     
-    <!-- Stop ID Dropdown -->
+    <!-- Stop ID Dropdown (Now populated dynamically on load) -->
     <select id="stopId">
         <option value="">-- Select a Stop ID --</option>
-        <option value="6084">Stop 6084 (Barrington St)</option>
-        <option value="7001">Stop 7001 (Mumford Terminal)</option>
-        <option value="8220">Stop 8220 (Dartmouth Crossing)</option>
     </select>
 
     <!-- Route ID Dropdown -->
@@ -36,7 +33,6 @@
     <p id="status">Select your route parameters to begin tracking.</p>
 </div>
 
-<!-- CRITICAL: Added type="module" to enable import syntax -->
 <script type="module">
     // Import the massive transit dataset from its isolated file
     import transitData from './transitData.js';
@@ -47,6 +43,27 @@
     // Setup event listeners cleanly inside the module scope
     document.getElementById('stopId').addEventListener('change', updateRouteDropdown);
     document.getElementById('submitBtn').addEventListener('click', requestAndRegisterAlert);
+
+    # Run the setup function immediately on page load
+    populateStopDropdown();
+
+    // NEW FUNCTION: Dynamically injects every stop from transitData into the dropdown
+    function populateStopDropdown() {
+        const stopSelect = document.getElementById('stopId');
+        
+        # Extract all keys (Stop IDs) from your object and sort them numerically
+        const allStops = Object.keys(transitData).sort((a, b) => {
+            return (parseInt(a) || 0) - (parseInt(b) || 0);
+        });
+
+        # Loop through every stop key and append it as a choice
+        allStops.forEach(stopId => {
+            const option = document.createElement('option');
+            option.value = stopId;
+            option.textContent = `Stop ${stopId}`;
+            stopSelect.appendChild(option);
+        });
+    }
 
     // Dynamically updates the Route dropdown based on the selected Stop
     function updateRouteDropdown() {

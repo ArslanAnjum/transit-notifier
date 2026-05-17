@@ -35,14 +35,18 @@
     <button id="submitBtn">Set 5-Min Alert</button>
     <p id="status">Select your route parameters to begin tracking.</p>
 </div>
-    
-<script>
 
+<!-- CRITICAL: Added type="module" to enable import syntax -->
+<script type="module">
     // Import the massive transit dataset from its isolated file
     import transitData from './transitData.js';
-    
+
     const API_ENDPOINT = "https://wnxu2jwhfgfopotnnwrtsgjeum0pzwoi.lambda-url.ca-central-1.on.aws/";
     const PUBLIC_VAPID_KEY = "BDZEQSMZKkKmAhr1bIZUBN7TrQBQS53hyhXLCEF4Pi0LidSKeCpO2ozy8WYuG38ephBxoaVYGEsoQlpKvurGVRg";
+
+    // Setup event listeners cleanly inside the module scope
+    document.getElementById('stopId').addEventListener('change', updateRouteDropdown);
+    document.getElementById('submitBtn').addEventListener('click', requestAndRegisterAlert);
 
     // Dynamically updates the Route dropdown based on the selected Stop
     function updateRouteDropdown() {
@@ -50,11 +54,9 @@
         const routeSelect = document.getElementById('routeId');
         const selectedStop = stopSelect.value;
 
-        // Clear existing options
         routeSelect.innerHTML = '<option value="">-- Select a Route ID --</option>';
 
         if (selectedStop && transitData[selectedStop]) {
-            // Enable dropdown and populate relevant routes
             routeSelect.disabled = false;
             transitData[selectedStop].forEach(route => {
                 const option = document.createElement('option');
@@ -63,7 +65,6 @@
                 routeSelect.appendChild(option);
             });
         } else {
-            // Disable dropdown if no valid stop is selected
             routeSelect.disabled = true;
         }
     }

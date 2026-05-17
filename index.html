@@ -187,7 +187,8 @@
                 sk: browserUserId,
                 endpoint_url: subscription.endpoint,
                 auth_key: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth')))),
-                p256dh_key: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh'))))
+                p256dh_key: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh')))),
+                is_active: true
             };
 
             const response = await fetch(API_ENDPOINT, {

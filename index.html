@@ -44,10 +44,7 @@
     document.getElementById('stopId').addEventListener('change', updateRouteDropdown);
     document.getElementById('submitBtn').addEventListener('click', requestAndRegisterAlert);
 
-    # Run the setup function immediately on page load
-    populateStopDropdown();
-
-    // NEW FUNCTION: Dynamically injects every stop from transitData into the dropdown
+    // Dynamically injects every stop from transitData into the dropdown
     function populateStopDropdown() {
         const stopSelect = document.getElementById('stopId');
         
@@ -64,6 +61,8 @@
             stopSelect.appendChild(option);
         });
     }
+
+    populateStopDropdown();
 
     // Dynamically updates the Route dropdown based on the selected Stop
     function updateRouteDropdown() {

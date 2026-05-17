@@ -132,7 +132,6 @@
             background: #f8fafc;
         }
 
-        /* Revised Dashboard Alert Item with Interactive Layout Controls */
         .alert-item {
             background: var(--card-bg);
             border-radius: 12px;
@@ -167,7 +166,6 @@
         .tag-active { background: #d1fae5; color: #065f46; }
         .tag-inactive { background: #fee2e2; color: #991b1b; }
 
-        /* Small Action Delete Button */
         .btn-delete {
             background: var(--delete-bg);
             color: var(--delete-text);
@@ -185,9 +183,6 @@
             background: var(--delete-text);
             color: white;
         }
-        .btn-delete:active {
-            transform: scale(0.95);
-        }
 
         .ts-control {
             border-radius: 8px !important;
@@ -201,6 +196,94 @@
             opacity: 0.6;
             cursor: not-allowed;
         }
+
+        /* --- Custom UI Modal Design Styles --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 45, 74, 0.6); /* Translucent navy window tint */
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        .modal-overlay.is-active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-box {
+            background: var(--card-bg);
+            max-width: 400px;
+            width: 100%;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-overlay.is-active .modal-box {
+            transform: scale(1);
+        }
+
+        .modal-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--delete-bg);
+            color: var(--delete-text);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 16px auto;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .modal-title {
+            color: var(--dark-blue);
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+        }
+
+        .modal-message {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 0 0 24px 0;
+        }
+
+        .modal-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn-modal-cancel {
+            background: #f1f5f9;
+            color: var(--text-main);
+            box-shadow: none;
+        }
+        .btn-modal-cancel:hover { background: #e2e8f0; }
+
+        .btn-modal-confirm {
+            background: var(--delete-text);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+        }
+        .btn-modal-confirm:hover { background: var(--delete-hover); }
 
         @media (min-width: 680px) {
             .main-layout {
@@ -248,6 +331,18 @@
     </div>
 </div>
 
+<div id="customConfirmModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-icon">⚠️</div>
+        <h3 class="modal-title" id="modalTitle">Remove Alert Tracker</h3>
+        <p class="modal-message" id="modalMessage">Are you sure you want to stop tracking this transit route? You will no longer receive proximity alerts for it.</p>
+        <div class="modal-buttons">
+            <button id="modalCancelBtn" class="btn-modal-cancel">Cancel</button>
+            <button id="modalConfirmBtn" class="btn-modal-confirm">Delete Tracker</button>
+        </div>
+    </div>
+</div>
+
 <script type="module">
     import transitData from './transitData.js';
 
@@ -258,12 +353,15 @@
 
     let stopSearchControl;
     let routeSearchControl;
+    let pendingDeletionTarget = null; // Caches target button details across async confirmation clicks
 
     document.getElementById('submitBtn').addEventListener('click', requestAndRegisterAlert);
     window.addEventListener('DOMContentLoaded', fetchAndDisplayAlerts);
-
-    // Attach event scoping delegation directly onto container instances for deletion mechanics
     document.getElementById('alertsContainer').addEventListener('click', handleAlertContainerClick);
+
+    // Bind modal actions
+    document.getElementById('modalCancelBtn').addEventListener('click', closeConfirmModal);
+    document.getElementById('modalConfirmBtn').addEventListener('click', executeDeletionConfirmed);
 
     function initializeSearchDropdowns() {
         const allStops = Object.keys(transitData).sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
@@ -429,7 +527,6 @@
                 return;
             }
 
-            // Map the layout payload injecting explicit data configurations inside the action elements
             alertsContainer.innerHTML = alerts.map(alert => `
                 <div class="alert-item">
                     <div>
@@ -440,7 +537,11 @@
                         <span class="alert-tag ${alert.status ? 'tag-active' : 'tag-inactive'}">
                             ${alert.status ? 'Active' : 'Inactive'}
                         </span>
-                        <button class="btn-delete" data-pk="${alert.stop_id}_${alert.route_id}" data-sk="${browserUserId}">
+                        <button class="btn-delete"
+                                data-pk="${alert.stop_id}_${alert.route_id}"
+                                data-sk="${browserUserId}"
+                                data-stop="${alert.stop_id}"
+                                data-route="${alert.route_id}">
                             Delete
                         </button>
                     </div>
@@ -451,15 +552,38 @@
         }
     }
 
-    // Handles the container's interactive event clicks, executing deletions when buttons are targeted
-    async function handleAlertContainerClick(e) {
+    /* --- Custom Modal Interface Controller Logic --- */
+    function openConfirmModal(stopId, routeId) {
+        document.getElementById('modalMessage').innerText = `Are you sure you want to stop tracking Route ${routeId} at Stop ${stopId}? You will no longer receive proximity alerts for this run.`;
+        document.getElementById('customConfirmModal').classList.add('is-active');
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('customConfirmModal').classList.remove('is-active');
+        pendingDeletionTarget = null;
+    }
+
+    function handleAlertContainerClick(e) {
         if (!e.target.classList.contains('btn-delete')) return;
 
-        const button = e.target;
+        // Cache the element reference to control text updates and attributes later
+        pendingDeletionTarget = e.target;
+
+        const stopId = pendingDeletionTarget.getAttribute('data-stop');
+        const routeId = pendingDeletionTarget.getAttribute('data-route');
+
+        // Trigger customized UI overlay modal
+        openConfirmModal(stopId, routeId);
+    }
+
+    async function executeDeletionConfirmed() {
+        if (!pendingDeletionTarget) return;
+
+        const button = pendingDeletionTarget;
         const pk = button.getAttribute('data-pk');
         const sk = button.getAttribute('data-sk');
 
-        if (!confirm("Are you sure you want to remove this transit proximity alert tracker?")) return;
+        closeConfirmModal(); // Drop modal backdrop window overlay early
 
         const originalText = button.innerText;
         button.innerText = "Removing...";
@@ -473,7 +597,6 @@
             });
 
             if (response.ok) {
-                // Instantly remove from view array on success
                 fetchAndDisplayAlerts();
             } else {
                 alert("Failed to delete the alert from server context.");

@@ -59,7 +59,7 @@
             }
 
             statusText.innerText = "Registering device service workers...";
-            const registration = await navigator.serviceWorker.register('/sw.js');
+            const registration = await navigator.serviceWorker.register('sw.js');
             
             statusText.innerText = "Negotiating handshake with push server...";
             const subscription = await registration.pushManager.subscribe({

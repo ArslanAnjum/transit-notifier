@@ -4,14 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Halifax Transit Smart Proximity Tracker</title>
+    
+    <!-- Tom Select Searchable Dropdown CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.6.1/dist/css/tom-select.default.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.6.1/dist/js/tom-select.complete.min.js"></script>
+
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 360px; text-align: center; }
         h2 { color: #1a3a5f; margin-bottom: 20px; }
-        select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; background-color: white; }
+        .form-group { margin: 12px 0; text-align: left; }
         button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
         button:hover { background: #0056b3; }
-        #status { margin-top: 15px; font-size: 13px; color: #666; font-weight: 500; }
+        #status { margin-top: 15px; font-size: 13px; color: #666; font-weight: 500; text-align: center; }
+        /* Sync library styling slightly with card components */
+        .ts-control { border-radius: 6px !important; padding: 10px !important; }
     </style>
 </head>
 <body>
@@ -19,73 +26,95 @@
 <div class="card">
     <h2>Halifax Transit Alert</h2>
     
-    <!-- Stop ID Dropdown (Now populated dynamically on load) -->
-    <select id="stopId">
-        <option value="">-- Select a Stop ID --</option>
-    </select>
+    <!-- Stop ID Dropdown Wrap -->
+    <div class="form-group">
+        <select id="stopId" placeholder="Search or select Stop ID...">
+            <option value="">Search or select Stop ID...</option>
+        </select>
+    </div>
 
-    <!-- Route ID Dropdown -->
-    <select id="routeId" disabled>
-        <option value="">-- Select a Route ID --</option>
-    </select>
+    <!-- Route ID Dropdown Wrap -->
+    <div class="form-group">
+        <select id="routeId" placeholder="Select a Route ID...">
+            <option value="">Select a Route ID...</option>
+        </select>
+    </div>
 
     <button id="submitBtn">Set 5-Min Alert</button>
     <p id="status">Select your route parameters to begin tracking.</p>
 </div>
 
+<!-- Script context must remain type="module" to load transitData.js -->
 <script type="module">
-    // Import the massive transit dataset from its isolated file
     import transitData from './transitData.js';
 
     const API_ENDPOINT = "https://wnxu2jwhfgfopotnnwrtsgjeum0pzwoi.lambda-url.ca-central-1.on.aws/";
     const PUBLIC_VAPID_KEY = "BDZEQSMZKkKmAhr1bIZUBN7TrQBQS53hyhXLCEF4Pi0LidSKeCpO2ozy8WYuG38ephBxoaVYGEsoQlpKvurGVRg";
 
-    // Setup event listeners cleanly inside the module scope
-    document.getElementById('stopId').addEventListener('change', updateRouteDropdown);
-    document.getElementById('submitBtn').addEventListener('click', requestAndRegisterAlert);
+    // References for the search controller tracking references 
+    let stopSearchControl;
+    let routeSearchControl;
 
-    // Dynamically injects every stop from transitData into the dropdown
-    function populateStopDropdown() {
-        const stopSelect = document.getElementById('stopId');
-        
-        // Extract all keys (Stop IDs) from your object and sort them numerically
+    // Attach core module actions on initialization
+    document.getElementById('submitBtn').addEventListener('click', requestAndRegisterAlert);
+    
+    initializeSearchDropdowns();
+
+    function initializeSearchDropdowns() {
+        // 1. Extract all keys (Stop IDs) from your object and sort them numerically
         const allStops = Object.keys(transitData).sort((a, b) => {
             return (parseInt(a) || 0) - (parseInt(b) || 0);
         });
 
-        // Loop through every stop key and append it as a choice
+        const stopSelectEl = document.getElementById('stopId');
+        
+        // 2. Insert sorted stop records as actual standard options first
         allStops.forEach(stopId => {
             const option = document.createElement('option');
             option.value = stopId;
             option.textContent = `Stop ${stopId}`;
-            stopSelect.appendChild(option);
+            stopSelectEl.appendChild(option);
         });
+
+        // 3. Initialize TomSelect on Stop Dropdown
+        stopSearchControl = new TomSelect('#stopId', {
+            create: false,
+            sortField: { field: "text", direction: "asc" },
+            onChange: function(selectedStop) {
+                updateRouteDropdownOptions(selectedStop);
+            }
+        });
+
+        // 4. Initialize TomSelect on Route Dropdown (Starts empty and disabled)
+        routeSearchControl = new TomSelect('#routeId', {
+            create: false,
+            sortField: { field: "text", direction: "asc" }
+        });
+        routeSearchControl.disable();
     }
 
-    populateStopDropdown();
-
-    // Dynamically updates the Route dropdown based on the selected Stop
-    function updateRouteDropdown() {
-        const stopSelect = document.getElementById('stopId');
-        const routeSelect = document.getElementById('routeId');
-        const selectedStop = stopSelect.value;
-
-        routeSelect.innerHTML = '<option value="">-- Select a Route ID --</option>';
+    // Safely mutates the data pool within TomSelect on selection changes
+    function updateRouteDropdownOptions(selectedStop) {
+        // Reset state
+        routeSearchControl.clear();
+        routeSearchControl.clearOptions();
 
         if (selectedStop && transitData[selectedStop]) {
-            routeSelect.disabled = false;
-            transitData[selectedStop].forEach(route => {
-                const option = document.createElement('option');
-                option.value = route;
-                option.textContent = `Route ${route}`;
-                routeSelect.appendChild(option);
-            });
+            routeSearchControl.enable();
+            
+            // Format parameters to fit the lookup collection configuration schema
+            const routeOptions = transitData[selectedStop].map(route => ({
+                value: route,
+                text: `Route ${route}`
+            }));
+
+            routeSearchControl.addOptions(routeOptions);
+            routeSearchControl.refreshOptions(false);
         } else {
-            routeSelect.disabled = true;
+            routeSearchControl.disable();
         }
     }
 
-    // Helper utility to safely convert VAPID keys to a browser-compatible Uint8Array format
     function urlBase64ToUint8Array(base64String) {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
         const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
@@ -97,7 +126,6 @@
         return outputArray;
     }
 
-    // State Management: Retrieves the existing browser ID, or creates a permanent one if it doesn't exist
     function getOrCreateBrowserId() {
         let browserId = localStorage.getItem('transit_browser_id');
         if (!browserId) {
@@ -108,8 +136,9 @@
     }
 
     async function requestAndRegisterAlert() {
-        const stopId = document.getElementById('stopId').value;
-        const routeId = document.getElementById('routeId').value;
+        // Must fetch values directly via our TomSelect controllers
+        const stopId = stopSearchControl.getValue();
+        const routeId = routeSearchControl.getValue();
         const statusText = document.getElementById('status');
 
         if (!stopId || !routeId) {

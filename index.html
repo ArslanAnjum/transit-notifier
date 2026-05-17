@@ -11,6 +11,7 @@
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
         button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
         button:hover { background: #0056b3; }
+        id { margin-top: 15px; font-size: 13px; color: #666; font-weight: 500; }
         #status { margin-top: 15px; font-size: 13px; color: #666; font-weight: 500; }
     </style>
 </head>
@@ -40,6 +41,17 @@
         return outputArray;
     }
 
+    // State Management: Retrieves the existing browser ID, or creates a permanent one if it doesn't exist
+    function getOrCreateBrowserId() {
+        let browserId = localStorage.getItem('transit_browser_id');
+        if (!browserId) {
+            // Generate a unique ID structure once for this device/browser instance
+            browserId = `USER_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+            localStorage.setItem('transit_browser_id', browserId);
+        }
+        return browserId;
+    }
+
     async function requestAndRegisterAlert() {
         const stopId = document.getElementById('stopId').value.trim();
         const routeId = document.getElementById('routeId').value.trim();
@@ -64,19 +76,16 @@
             statusText.innerText = "Waiting for service worker activation...";
             if (!registration.active) {
                 await new Promise((resolve) => {
-                    // If it's still installing or waiting, listen for state changes
                     const worker = registration.installing || registration.waiting;
                     if (worker) {
                         worker.addEventListener('statechange', (e) => {
                             if (e.target.state === 'activated') resolve();
                         });
                     } else {
-                        // Fallback if it activated instantly between frames
                         resolve();
                     }
                 });
             }
-            // Double check with the browser's ready promise interface
             await navigator.serviceWorker.ready; 
             
             statusText.innerText = "Negotiating handshake with push server...";
@@ -87,10 +96,13 @@
 
             statusText.innerText = "Saving tracking criteria to secure server storage...";
 
-            // Construct the exact primary key structures matching your DynamoDB configuration schema
+            // Retrieve the stable browser user identifier
+            const browserUserId = getOrCreateBrowserId();
+
+            // Construct the payload using the persistent sk to prevent database row duplication
             const databasePayload = {
                 pk: `${stopId}_${routeId}`,
-                sk: `USER_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                sk: browserUserId,
                 endpoint_url: subscription.endpoint,
                 auth_key: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth')))),
                 p256dh_key: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh'))))
@@ -110,7 +122,7 @@
 
         } catch (error) {
             console.error(error);
-            statusText.innerText = `❌ Error initializing alert infrastructure: ${error.message} - ${error}`;
+            statusText.innerText = `❌ Error initializing alert infrastructure: ${error.message}`;
         }
     }
 </script>

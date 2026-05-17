@@ -48,12 +48,12 @@
     function populateStopDropdown() {
         const stopSelect = document.getElementById('stopId');
         
-        # Extract all keys (Stop IDs) from your object and sort them numerically
+        // Extract all keys (Stop IDs) from your object and sort them numerically
         const allStops = Object.keys(transitData).sort((a, b) => {
             return (parseInt(a) || 0) - (parseInt(b) || 0);
         });
 
-        # Loop through every stop key and append it as a choice
+        // Loop through every stop key and append it as a choice
         allStops.forEach(stopId => {
             const option = document.createElement('option');
             option.value = stopId;

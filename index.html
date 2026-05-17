@@ -44,11 +44,15 @@
     <p id="status">Select your route parameters to begin tracking.</p>
 </div>
 
+<!-- Alerts Card Container -->
+<div id="alertsContainer" style="width:100%;max-width:360px;margin-top:24px;"></div>
+
 <!-- Script context must remain type="module" to load transitData.js -->
 <script type="module">
     import transitData from './transitData.js';
 
     const API_ENDPOINT = "https://wnxu2jwhfgfopotnnwrtsgjeum0pzwoi.lambda-url.ca-central-1.on.aws/";
+    const ALERTS_ENDPOINT = "https://l7srhnplybhzagyehgedib246y0rvmem.lambda-url.ca-central-1.on.aws/";
     const PUBLIC_VAPID_KEY = "BDZEQSMZKkKmAhr1bIZUBN7TrQBQS53hyhXLCEF4Pi0LidSKeCpO2ozy8WYuG38ephBxoaVYGEsoQlpKvurGVRg";
 
     // References for the search controller tracking references 
@@ -206,6 +210,37 @@
         } catch (error) {
             console.error(error);
             statusText.innerText = `❌ Error initializing alert infrastructure: ${error.message}`;
+        }
+    }
+
+    // On page load, fetch and display alerts
+    window.addEventListener('DOMContentLoaded', fetchAndDisplayAlerts);
+
+    async function fetchAndDisplayAlerts() {
+        const browserUserId = getOrCreateBrowserId();
+        const alertsContainer = document.getElementById('alertsContainer');
+        alertsContainer.innerHTML = '<div style="text-align:center;color:#888;">Loading your alerts...</div>';
+        try {
+            const response = await fetch(ALERTS_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sk: browserUserId })
+            });
+            if (!response.ok) throw new Error('Failed to fetch alerts');
+            const data = await response.json();
+            const alerts = (data && data.alerts) ? data.alerts : [];
+            if (alerts.length === 0) {
+                alertsContainer.innerHTML = '<div style="text-align:center;color:#888;">No active alerts found.</div>';
+                return;
+            }
+            alertsContainer.innerHTML = alerts.map(alert => `
+                <div style="background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.06);padding:18px 16px;margin-bottom:14px;text-align:left;">
+                    <div style="font-weight:bold;color:#1a3a5f;">Stop <span style="color:#007bff;">${alert.stop_id}</span> &mdash; Route <span style="color:#007bff;">${alert.route_id}</span></div>
+                    <div style="margin-top:6px;font-size:13px;color:#555;">Status: <span style="color:${alert.status ? '#28a745' : '#dc3545'};font-weight:600;">${alert.status ? 'Active' : 'Inactive'}</span></div>
+                </div>
+            `).join('');
+        } catch (e) {
+            alertsContainer.innerHTML = '<div style="text-align:center;color:#d9534f;">Error loading alerts.</div>';
         }
     }
 </script>

@@ -320,6 +320,16 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <label for="leadTime">3. Select Alert Lead Time</label>
+                <select id="leadTime" placeholder="Select lead time...">
+                    <option value="5" selected>5 mins</option>
+                    <option value="10">10 mins</option>
+                    <option value="15">15 mins</option>
+                    <option value="30">30 mins</option>
+                </select>
+            </div>
+
             <button id="submitBtn">Set 5-Min Smart Alert</button>
             <p id="status">Select your route parameters to begin tracking.</p>
         </div>
@@ -353,6 +363,7 @@
 
     let stopSearchControl;
     let routeSearchControl;
+    let leadTimeSearchControl;
     let pendingDeletionTarget = null; // Caches target button details across async confirmation clicks
 
     document.getElementById('submitBtn').addEventListener('click', requestAndRegisterAlert);
@@ -387,6 +398,14 @@
             sortField: { field: "text", direction: "asc" }
         });
         routeSearchControl.disable();
+
+        leadTimeSearchControl = new TomSelect('#leadTime', {
+            create: false,
+            disableSearch: true,
+            onChange: function(value) {
+                document.getElementById('submitBtn').innerText = `Set ${value}-Min Smart Alert`;
+            }
+        });
     }
 
     initializeSearchDropdowns();
@@ -431,11 +450,12 @@
     async function requestAndRegisterAlert() {
         const stopId = stopSearchControl.getValue();
         const routeId = routeSearchControl.getValue();
+        const leadTime = leadTimeSearchControl.getValue();
         const statusText = document.getElementById('status');
 
-        if (!stopId || !routeId) {
+        if (!stopId || !routeId || !leadTime) {
             statusText.style.color = "var(--error)";
-            statusText.innerText = "⚠️ Missing required Stop or Route selection.";
+            statusText.innerText = "⚠️ Missing required configurations.";
             return;
         }
 
@@ -482,6 +502,7 @@
                 endpoint_url: subscription.endpoint,
                 auth_key: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth')))),
                 p256dh_key: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh')))),
+                lead_time: parseInt(leadTime),
                 is_active: true
             };
 
@@ -493,7 +514,7 @@
 
             if (response.ok) {
                 statusText.style.color = "var(--success)";
-                statusText.innerText = `✅ Tracking active! You'll be alerted 5 mins before Route ${routeId} reaches Stop ${stopId}.`;
+                statusText.innerText = `✅ Tracking active! You'll be alerted ${leadTime} mins before Route ${routeId} reaches Stop ${stopId}.`;
                 fetchAndDisplayAlerts();
             } else {
                 statusText.style.color = "var(--error)";
@@ -531,7 +552,7 @@
                 <div class="alert-item">
                     <div>
                         <div class="alert-info-title">Stop ${alert.stop_id}</div>
-                        <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Route ${alert.route_id}</div>
+                        <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Route ${alert.route_id} (${alert.lead_time || 5} min window)</div>
                     </div>
                     <div class="alert-actions">
                         <span class="alert-tag ${alert.status ? 'tag-active' : 'tag-inactive'}">

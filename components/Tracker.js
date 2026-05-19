@@ -1,4 +1,6 @@
 import transitData from '../transitData.js';
+// 1. Import About to access its template layout when trackers are empty
+import About from './About.js';
 
 const API_ENDPOINT = "https://wnxu2jwhfgfopotnnwrtsgjeum0pzwoi.lambda-url.ca-central-1.on.aws/";
 const ALERTS_ENDPOINT = "https://l7srhnplybhzagyehgedib246y0rvmem.lambda-url.ca-central-1.on.aws/";
@@ -84,10 +86,8 @@ function openCreateModal() {
 
     // Swap original operational buttons for the creation workflow
     modalButtons.innerHTML = `
-        <div style="display: flex; flex-direction: column; width: 100%; gap: 8px;">
-            <button id="submitBtn" class="btn-modal-confirm" style="background: var(--primary); box-shadow: 0 4px 12px rgba(0, 98, 204, 0.2); width: 100%; margin: 0;">Set 5-Min Smart Alert</button>
-            <button id="modalCancelBtn" class="btn-modal-cancel" style="width: 100%; margin: 0;">Cancel</button>
-        </div>
+        <button id="modalCancelBtn" class="btn-modal-cancel">Cancel</button>
+        <button id="submitBtn" class="btn-modal-confirm" style="background: var(--primary); box-shadow: 0 4px 12px rgba(0, 98, 204, 0.2);">Set 5-Min Smart Alert</button>
     `;
 
     // 2. Initialize TomSelect features after elements are rendered inside the modal DOM
@@ -247,8 +247,23 @@ async function fetchAndDisplayAlerts() {
         const data = await response.json();
         const alerts = data?.alerts || [];
 
+        // 2. If no trackers are present, dynamically inject the Info Card layout from About
         if (alerts.length === 0) {
-            alertsContainer.innerHTML = '<div class="empty-watchlist">No active tracking routes found.</div>';
+            alertsContainer.innerHTML = `
+                <div class="empty-watchlist" style="margin-bottom: 20px; color: var(--text-muted);">
+                    No active tracking routes found.
+                </div>
+                <div class="card info-card" style="text-align: left;">
+                    <h3>1. Selection & Registration</h3>
+                    <p>Choose your regular daily stop numbers and route intervals. Our system registers an encrypted handshake utilizing secure Browser Push notifications APIs.</p>
+
+                    <h3>2. Predictive Tracking</h3>
+                    <p>Our server-side cloud infrastructure continually references Halifax Transit scheduling real-time positioning feeds against your custom proximity parameters.</p>
+
+                    <h3>3. Instant Delivery</h3>
+                    <p>Even if your phone is resting in your pocket or the browser app is completely closed down, the active system worker pushes a native OS alert to ensure you walk out exactly on time.</p>
+                </div>
+            `;
             return;
         }
 

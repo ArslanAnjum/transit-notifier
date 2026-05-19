@@ -5,17 +5,27 @@ self.addEventListener('push', function(event) {
     try {
         const data = event.data.json();
 
+        const pk = data.pk || data.data?.pk;
+        const sk = data.sk || data.data?.sk;
+
         // Setup options along with actionable buttons
         const options = {
             body: data.body,
             icon: 'https://www.halifax.ca/themes/custom/halifax/logo.svg', // Branding placeholder
             badge: 'https://www.halifax.ca/themes/custom/halifax/logo.svg',
             vibrate: [200, 100, 200], // Haptic pulses on mobile devices
+
+            // KEY ADDITION: The tag groups notifications by this ID and updates them sequentially
+            tag: pk ? String(pk) : undefined,
+
+            // OPTIONAL: set to true if you want the device to vibrate/sound again on update
+            renotify: true,
+
             data: {
                 dateOfArrival: Date.now(),
                 // CRITICAL: Ensure your backend tracking Lambda includes pk & sk inside the 'data' layer of its payload
-                pk: data.pk || data.data?.pk,
-                sk: data.sk || data.data?.sk
+                pk: pk,
+                sk: sk
             },
             actions: [
                 { action: 'delete_tracker', title: '🛑 Stop Tracking' },

@@ -144,6 +144,7 @@ button:active { transform: scale(0.99); }
     justify-content: space-between;
     align-items: center;
     transition: transform 0.2s, box-shadow 0.2s;
+    width: 100%;
 }
 .alert-item:hover {
     transform: translateY(-2px);

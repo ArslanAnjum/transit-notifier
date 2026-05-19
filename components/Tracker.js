@@ -23,7 +23,7 @@ const Tracker = {
             </button>
 
             <div>
-                <h3 class="watchlist-title">Active Watchlist Alerts</h3>
+                <h3 class="watchlist-title">Active Alerts</h3>
                 <div id="alertsContainer"></div>
             </div>
         </div>

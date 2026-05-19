@@ -1,9 +1,9 @@
 const Navbar = {
     render: () => `
         <nav class="global-nav">
-            <div class="nav-brand">🚍 Halifax Smart Tracker</div>
+            <div class="nav-brand">Next-Upp</div>
             <div class="nav-links">
-                <a href="#/">Dashboard</a>
+                <a href="#/">Home</a>
                 <a href="#/sponsors">Local Perks</a>
                 <a href="#/about">How it Works</a>
             </div>

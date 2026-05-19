@@ -1,19 +1,19 @@
 const About = {
     render: () => `
         <header class="app-header">
-            <h1>How It Works</h1>
-            <p>Behind the scenes of your automated real-time transit proximity system</p>
+            <h1>How NexxtUp Works</h1>
+            <p>Smart proximity alerts powered by real-time transit data</p>
         </header>
 
         <div class="card info-card">
-            <h3>1. Selection & Registration</h3>
-            <p>Choose your regular daily stop numbers and route intervals. Our system registers an encrypted handshake utilizing secure Browser Push notifications APIs.</p>
+            <h3>1. Choose Your Routes</h3>
+            <p>Select your transit stops and routes, then set your preferred alert lead time. NexxtUp securely registers your preferences using encrypted browser push notifications.</p>
 
-            <h3>2. Predictive Tracking</h3>
-            <p>Our server-side cloud infrastructure continually references Halifax Transit scheduling real-time positioning feeds against your custom proximity parameters.</p>
+            <h3>2. Real-Time Monitoring</h3>
+            <p>Our cloud infrastructure continuously monitors live transit schedules and vehicle positions against your custom proximity parameters, 24/7.</p>
 
-            <h3>3. Instant Delivery</h3>
-            <p>Even if your phone is resting in your pocket or the browser app is completely closed down, the active system worker pushes a native OS alert to ensure you walk out exactly on time.</p>
+            <h3>3. Instant Notifications</h3>
+            <p>Get native OS alerts at exactly the right time - even if NexxtUp is closed or your device is locked. Never miss your bus again.</p>
         </div>
     `,
     init: () => {}

@@ -13,8 +13,8 @@ let pendingDeletionTarget = null;
 const Tracker = {
     render: () => `
         <header class="app-header">
-            <h1>Transit Proximity Alerts</h1>
-            <p>Set proximity push notifications directly to your device</p>
+            <h1>NexxtUp Alerts</h1>
+            <p>Smart proximity notifications for your transit routes</p>
         </header>
 
         <div class="main-layout" style="grid-template-columns: 1fr; max-width: 600px; margin: 0 auto;">

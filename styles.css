@@ -319,17 +319,16 @@ button:active { transform: scale(0.99); }
 
 /* --- Global Navigation Layout --- */
 .global-nav {
-    width: 100%;
-    max-width: 850px;
-    margin: 0 auto 20px auto;
+    width: 100%; /* Spans the entire width of the viewport parent */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 20px;
+    gap: 40px; /* Adds guaranteed minimum space between brand and links */
+    padding: 18px 32px; /* Increased padding for a better widescreen look */
     background: var(--card-bg);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color); /* Elegant full-width divider */
     box-sizing: border-box;
+    margin-bottom: 30px; /* Creates clean separation from the content below */
 }
 
 .nav-brand {

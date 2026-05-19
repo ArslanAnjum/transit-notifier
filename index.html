@@ -30,11 +30,13 @@
             background: var(--bg-main);
             color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            /* Added 110px bottom padding so main content clears the 90px tall ad footer */
+            padding: 20px 20px 110px 20px;
             box-sizing: border-box;
             min-height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            justify-content: transform; /* Adjusted to allow normal scrolling with sticky footers */
             align-items: center;
         }
 
@@ -44,7 +46,7 @@
             gap: 24px;
             width: 100%;
             max-width: 850px;
-            margin: 0 auto;
+            margin: auto auto; /* Keeps the container centered vertically if space allows */
         }
 
         .app-header {
@@ -204,7 +206,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(15, 45, 74, 0.6); /* Translucent navy window tint */
+            background: rgba(15, 45, 74, 0.6);
             backdrop-filter: blur(4px);
             display: flex;
             justify-content: center;
@@ -285,6 +287,29 @@
         }
         .btn-modal-confirm:hover { background: var(--delete-hover); }
 
+        /* --- Persistent Google Ads Footer Styles --- */
+        .ad-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            min-height: 90px; /* Standard Leaderboard height */
+            background: #ffffff;
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -4px 10px rgba(15, 45, 74, 0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999; /* Just under the custom modals */
+            padding: 5px 0;
+        }
+
+        .ad-container {
+            width: 100%;
+            max-width: 728px; /* Standard Google Leaderboard max width */
+            text-align: center;
+        }
+
         @media (min-width: 680px) {
             .main-layout {
                 grid-template-columns: 1.1fr 0.9fr;
@@ -353,6 +378,18 @@
     </div>
 </div>
 
+<footer class="ad-footer">
+    <div class="ad-container">
+        <ins class="adsbygoogle"
+             style="display:inline-block;width:728px;height:90px"
+             data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+             data-ad-slot="XXXXXXXXXX"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+</footer>
+
 <script type="module">
     import transitData from './transitData.js';
 
@@ -364,13 +401,12 @@
     let stopSearchControl;
     let routeSearchControl;
     let leadTimeSearchControl;
-    let pendingDeletionTarget = null; // Caches target button details across async confirmation clicks
+    let pendingDeletionTarget = null;
 
     document.getElementById('submitBtn').addEventListener('click', requestAndRegisterAlert);
     window.addEventListener('DOMContentLoaded', fetchAndDisplayAlerts);
     document.getElementById('alertsContainer').addEventListener('click', handleAlertContainerClick);
 
-    // Bind modal actions
     document.getElementById('modalCancelBtn').addEventListener('click', closeConfirmModal);
     document.getElementById('modalConfirmBtn').addEventListener('click', executeDeletionConfirmed);
 
@@ -573,7 +609,6 @@
         }
     }
 
-    /* --- Custom Modal Interface Controller Logic --- */
     function openConfirmModal(stopId, routeId) {
         document.getElementById('modalMessage').innerText = `Are you sure you want to stop tracking Route ${routeId} at Stop ${stopId}? You will no longer receive proximity alerts for this run.`;
         document.getElementById('customConfirmModal').classList.add('is-active');
@@ -587,13 +622,11 @@
     function handleAlertContainerClick(e) {
         if (!e.target.classList.contains('btn-delete')) return;
 
-        // Cache the element reference to control text updates and attributes later
         pendingDeletionTarget = e.target;
 
         const stopId = pendingDeletionTarget.getAttribute('data-stop');
         const routeId = pendingDeletionTarget.getAttribute('data-route');
 
-        // Trigger customized UI overlay modal
         openConfirmModal(stopId, routeId);
     }
 
@@ -604,7 +637,7 @@
         const pk = button.getAttribute('data-pk');
         const sk = button.getAttribute('data-sk');
 
-        closeConfirmModal(); // Drop modal backdrop window overlay early
+        closeConfirmModal();
 
         const originalText = button.innerText;
         button.innerText = "Removing...";

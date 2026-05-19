@@ -84,8 +84,10 @@ function openCreateModal() {
 
     // Swap original operational buttons for the creation workflow
     modalButtons.innerHTML = `
-        <button id="modalCancelBtn" class="btn-modal-cancel">Cancel</button>
-        <button id="submitBtn" class="btn-modal-confirm" style="background: var(--primary); box-shadow: 0 4px 12px rgba(0, 98, 204, 0.2);">Set 5-Min Smart Alert</button>
+        <div style="display: flex; flex-direction: column; width: 100%; gap: 8px;">
+            <button id="submitBtn" class="btn-modal-confirm" style="background: var(--primary); box-shadow: 0 4px 12px rgba(0, 98, 204, 0.2); width: 100%; margin: 0;">Set 5-Min Smart Alert</button>
+            <button id="modalCancelBtn" class="btn-modal-cancel" style="width: 100%; margin: 0;">Cancel</button>
+        </div>
     `;
 
     // 2. Initialize TomSelect features after elements are rendered inside the modal DOM

@@ -11,37 +11,14 @@ let pendingDeletionTarget = null;
 const Tracker = {
     render: () => `
         <header class="app-header">
-            <h1>Configure Alert Trigger</h1>
+            <h1>Transit Proximity Alerts</h1>
             <p>Set proximity push notifications directly to your device</p>
         </header>
 
-        <div class="main-layout">
-            <div class="card">
-                <h2>Track New Run</h2>
-                <div class="form-group">
-                    <label for="stopId">1. Select Stop Location</label>
-                    <select id="stopId" placeholder="Search or select Stop ID...">
-                        <option value="">Search or select Stop ID...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="routeId">2. Select Bus Route</label>
-                    <select id="routeId" placeholder="Waiting for Stop selection..." disabled>
-                        <option value="">Waiting for Stop selection...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="leadTime">3. Select Alert Lead Time</label>
-                    <select id="leadTime">
-                        <option value="5" selected>5 mins</option>
-                        <option value="10">10 mins</option>
-                        <option value="15">15 mins</option>
-                        <option value="30">30 mins</option>
-                    </select>
-                </div>
-                <button id="submitBtn">Set 5-Min Smart Alert</button>
-                <p id="status">Select your route parameters to begin tracking.</p>
-            </div>
+        <div class="main-layout" style="grid-template-columns: 1fr; max-width: 600px; margin: 0 auto;">
+            <button id="openCreateModalBtn" style="padding: 16px; font-size: 16px; margin-bottom: 8px;">
+                ➕ Track New Transit Route
+            </button>
 
             <div>
                 <h3 class="watchlist-title">Active Watchlist Alerts</h3>
@@ -50,20 +27,90 @@ const Tracker = {
         </div>
     `,
     init: () => {
-        // Core initialization bindings
-        initializeSearchDropdowns();
+        // Fetch watchlist feeds immediately
         fetchAndDisplayAlerts();
 
-        document.getElementById('submitBtn').addEventListener('click', requestAndRegisterAlert);
+        // Bindings for the creation workflow
+        document.getElementById('openCreateModalBtn').addEventListener('click', openCreateModal);
         document.getElementById('alertsContainer').addEventListener('click', handleAlertContainerClick);
 
-        // Modal global triggers setup/reset
+        // Modal structural controls (Resetting global index HTML triggers)
         document.getElementById('modalCancelBtn').onclick = closeConfirmModal;
         document.getElementById('modalConfirmBtn').onclick = executeDeletionConfirmed;
     }
 };
 
-// --- Copy original support methods here securely ---
+// --- Modal Control Functions ---
+
+function openCreateModal() {
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalButtons = document.querySelector('.modal-buttons');
+    const modalIcon = document.querySelector('.modal-icon');
+
+    // 1. Transform the generic modal into the configuration form
+    modalIcon.innerText = "🔔";
+    modalIcon.style.background = "rgba(0, 98, 204, 0.1)";
+    modalIcon.style.color = "var(--primary)";
+    modalTitle.innerText = "Configure Alert Trigger";
+
+    // Inject the select structure directly into the message body area
+    modalMessage.innerHTML = `
+        <div class="card" style="box-shadow: none; padding: 10px 0 0 0; border: none; text-align: left;">
+            <div class="form-group">
+                <label for="stopId">1. Select Stop Location</label>
+                <select id="stopId" placeholder="Search or select Stop ID...">
+                    <option value="">Search or select Stop ID...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="routeId">2. Select Bus Route</label>
+                <select id="routeId" placeholder="Waiting for Stop selection..." disabled>
+                    <option value="">Waiting for Stop selection...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="leadTime">3. Select Alert Lead Time</label>
+                <select id="leadTime">
+                    <option value="5" selected>5 mins</option>
+                    <option value="10">10 mins</option>
+                    <option value="15">15 mins</option>
+                    <option value="30">30 mins</option>
+                </select>
+            </div>
+            <p id="status" style="margin-top: 10px;">Select parameters to begin tracking.</p>
+        </div>
+    `;
+
+    // Swap original operational buttons for the creation workflow
+    modalButtons.innerHTML = `
+        <button id="modalCancelBtn" class="btn-modal-cancel">Cancel</button>
+        <button id="submitBtn" class="btn-modal-confirm" style="background: var(--primary); box-shadow: 0 4px 12px rgba(0, 98, 204, 0.2);">Set 5-Min Smart Alert</button>
+    `;
+
+    // 2. Initialize TomSelect features after elements are rendered inside the modal DOM
+    initializeSearchDropdowns();
+
+    // 3. Bind events for internal components
+    document.getElementById('modalCancelBtn').onclick = closeConfirmModal;
+    document.getElementById('submitBtn').onclick = requestAndRegisterAlert;
+
+    // Open modal view
+    document.getElementById('customConfirmModal').classList.add('is-active');
+}
+
+function closeConfirmModal() {
+    document.getElementById('customConfirmModal').classList.remove('is-active');
+    pendingDeletionTarget = null;
+
+    // Clean up TomSelect instances if they exist to prevent memory leaks or dual mounting
+    if (stopSearchControl) { stopSearchControl.destroy(); stopSearchControl = null; }
+    if (routeSearchControl) { routeSearchControl.destroy(); routeSearchControl = null; }
+    if (leadTimeSearchControl) { leadTimeSearchControl.destroy(); leadTimeSearchControl = null; }
+}
+
+// --- Original Logic Wrappers ---
+
 function initializeSearchDropdowns() {
     const allStops = Object.keys(transitData).sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
     const stopSelectEl = document.getElementById('stopId');
@@ -93,6 +140,7 @@ function initializeSearchDropdowns() {
 }
 
 function updateRouteDropdownOptions(selectedStop) {
+    if (!routeSearchControl) return;
     routeSearchControl.clear();
     routeSearchControl.clearOptions();
     if (selectedStop && transitData[selectedStop]) {
@@ -171,7 +219,10 @@ async function requestAndRegisterAlert() {
         if (response.ok) {
             statusText.style.color = "var(--success)";
             statusText.innerText = `✅ Tracking active!`;
-            fetchAndDisplayAlerts();
+            setTimeout(() => {
+                closeConfirmModal();
+                fetchAndDisplayAlerts();
+            }, 800);
         } else {
             statusText.innerText = "❌ Registration rejected.";
         }
@@ -219,19 +270,33 @@ async function fetchAndDisplayAlerts() {
 function handleAlertContainerClick(e) {
     if (!e.target.classList.contains('btn-delete')) return;
     pendingDeletionTarget = e.target;
-    document.getElementById('modalMessage').innerText = `Are you sure you want to stop tracking Route ${pendingDeletionTarget.getAttribute('data-route')} at Stop ${pendingDeletionTarget.getAttribute('data-stop')}?`;
-    document.getElementById('customConfirmModal').classList.add('is-active');
-}
 
-function closeConfirmModal() {
-    document.getElementById('customConfirmModal').classList.remove('is-active');
-    pendingDeletionTarget = null;
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalButtons = document.querySelector('.modal-buttons');
+    const modalIcon = document.querySelector('.modal-icon');
+
+    // Revert/Setup modal elements to the generic Delete verification configuration
+    modalIcon.innerText = "⚠️";
+    modalIcon.style.background = "var(--delete-bg)";
+    modalIcon.style.color = "var(--delete-text)";
+    modalTitle.innerText = "Remove Alert Tracker";
+    modalMessage.innerText = `Are you sure you want to stop tracking Route ${pendingDeletionTarget.getAttribute('data-route')} at Stop ${pendingDeletionTarget.getAttribute('data-stop')}?`;
+
+    modalButtons.innerHTML = `
+        <button id="modalCancelBtn" class="btn-modal-cancel">Cancel</button>
+        <button id="modalConfirmBtn" class="btn-modal-confirm">Delete Tracker</button>
+    `;
+
+    document.getElementById('modalCancelBtn').onclick = closeConfirmModal;
+    document.getElementById('modalConfirmBtn').onclick = executeDeletionConfirmed;
+
+    document.getElementById('customConfirmModal').classList.add('is-active');
 }
 
 async function executeDeletionConfirmed() {
     if (!pendingDeletionTarget) return;
     const btn = pendingDeletionTarget;
-    closeConfirmModal();
     btn.innerText = "Removing...";
     btn.disabled = true;
 
@@ -241,7 +306,10 @@ async function executeDeletionConfirmed() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ pk: btn.getAttribute('data-pk'), sk: btn.getAttribute('data-sk') })
         });
-        if (res.ok) fetchAndDisplayAlerts();
+        if (res.ok) {
+            closeConfirmModal();
+            fetchAndDisplayAlerts();
+        }
     } catch (err) {
         alert("Error executing removal logic.");
     }

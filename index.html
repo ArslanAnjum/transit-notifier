@@ -12,75 +12,22 @@
 </head>
 <body>
 
-<div class="app-container">
-    <header class="app-header">
-        <h1>Halifax Transit Smart Tracker</h1>
-        <p>Set proximity push notifications directly to your device</p>
-    </header>
+    <div id="navbar-container"></div>
 
-    <div class="main-layout">
-        <div class="card">
-            <h2>Configure Alert Trigger</h2>
+    <main id="app-view" class="app-container"></main>
 
-            <div class="form-group">
-                <label for="stopId">1. Select Stop Location</label>
-                <select id="stopId" placeholder="Search or select Stop ID...">
-                    <option value="">Search or select Stop ID...</option>
-                </select>
+    <div id="customConfirmModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon">⚠️</div>
+            <h3 class="modal-title" id="modalTitle">Remove Alert Tracker</h3>
+            <p class="modal-message" id="modalMessage">Are you sure you want to stop tracking this transit route?</p>
+            <div class="modal-buttons">
+                <button id="modalCancelBtn" class="btn-modal-cancel">Cancel</button>
+                <button id="modalConfirmBtn" class="btn-modal-confirm">Delete Tracker</button>
             </div>
-
-            <div class="form-group">
-                <label for="routeId">2. Select Bus Route</label>
-                <select id="routeId" placeholder="Waiting for Stop selection..." disabled>
-                    <option value="">Waiting for Stop selection...</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="leadTime">3. Select Alert Lead Time</label>
-                <select id="leadTime" placeholder="Select lead time...">
-                    <option value="5" selected>5 mins</option>
-                    <option value="10">10 mins</option>
-                    <option value="15">15 mins</option>
-                    <option value="30">30 mins</option>
-                </select>
-            </div>
-
-            <button id="submitBtn">Set 5-Min Smart Alert</button>
-            <p id="status">Select your route parameters to begin tracking.</p>
-        </div>
-
-        <div>
-            <h3 class="watchlist-title">Active Watchlist Alerts</h3>
-            <div id="alertsContainer"></div>
         </div>
     </div>
-</div>
 
-<div id="customConfirmModal" class="modal-overlay">
-    <div class="modal-box">
-        <div class="modal-icon">⚠️</div>
-        <h3 class="modal-title" id="modalTitle">Remove Alert Tracker</h3>
-        <p class="modal-message" id="modalMessage">Are you sure you want to stop tracking this transit route? You will no longer receive proximity alerts for it.</p>
-        <div class="modal-buttons">
-            <button id="modalCancelBtn" class="btn-modal-cancel">Cancel</button>
-            <button id="modalConfirmBtn" class="btn-modal-confirm">Delete Tracker</button>
-        </div>
-    </div>
-</div>
-
-<footer class="ad-footer">
-    <div class="ad-container">
-        <ins class="adsbygoogle"
-             style="display:inline-block;width:728px;height:90px"
-             data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-             data-ad-slot="XXXXXXXXXX"></ins>
-        <script>
-             (adsbygoogle = window.adsbygoogle || []).push({});
-        </script>
-    </div>
-</footer>
-
-<script type="module" src="app.js"></script>
+    <script type="module" src="router.js"></script>
 </body>
 </html>

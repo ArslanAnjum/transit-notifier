@@ -316,3 +316,94 @@ button:active { transform: scale(0.99); }
     }
     .app-header { text-align: left; }
 }
+
+/* --- Global Navigation Layout --- */
+.global-nav {
+    width: 100%;
+    max-width: 850px;
+    margin: 0 auto 20px auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-sizing: border-box;
+}
+
+.nav-brand {
+    font-weight: 800;
+    color: var(--dark-blue);
+    font-size: 16px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 16px;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.nav-links a:hover, .nav-links a.active {
+    color: var(--primary);
+}
+
+/* --- Multi-page Layout Component Styles --- */
+.sponsors-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    width: 100%;
+}
+
+@media(min-width: 600px) {
+    .sponsors-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.sponsor-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.deal-tag {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: var(--success);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.empty-watchlist {
+    text-align: center;
+    color: var(--text-muted);
+    border: 2px dashed var(--border-color);
+    border-radius: 12px;
+    padding: 30px;
+    font-size: 14px;
+    background: var(--card-bg);
+}
+
+.info-card h3 {
+    color: var(--dark-blue);
+    margin-top: 24px;
+    font-size: 16px;
+}
+.info-card h3:first-of-type { margin-top: 0; }
+.info-card p {
+    line-height: 1.6;
+    color: var(--text-main);
+    font-size: 14px;
+}

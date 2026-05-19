@@ -254,6 +254,16 @@ button:active { transform: scale(0.99); }
     font-weight: bold;
 }
 
+.modal-icon-create {
+    background: rgba(0, 98, 204, 0.1);
+    color: var(--primary);
+}
+
+.modal-icon-delete {
+    background: var(--delete-bg);
+    color: var(--delete-text);
+}
+
 .modal-title {
     color: var(--dark-blue);
     font-size: 18px;
@@ -406,6 +416,68 @@ button:active { transform: scale(0.99); }
     padding: 30px;
     font-size: 14px;
     background: var(--card-bg);
+    margin-bottom: 20px;
+}
+
+.tracker-main-layout {
+    grid-template-columns: 1fr;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.create-tracker-btn {
+    padding: 16px;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.modal-form-container {
+    box-shadow: none;
+    padding: 10px 0 0 0;
+    border: none;
+    text-align: left;
+}
+
+.status-message {
+    margin-top: 10px;
+}
+
+.status-message.status-error {
+    color: var(--error);
+}
+
+.status-message.status-success {
+    color: var(--success);
+}
+
+.status-message.status-main {
+    color: var(--text-main);
+}
+
+.submit-btn-primary {
+    background: var(--primary);
+    box-shadow: 0 4px 12px rgba(0, 98, 204, 0.2);
+}
+
+.loading-indicator {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 20px;
+}
+
+.empty-watchlist-text {
+    text-align: left;
+}
+
+.alert-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.error-indicator {
+    text-align: center;
+    color: var(--error);
 }
 
 .info-card h3 {

@@ -17,8 +17,8 @@ const Tracker = {
             <p>Smart proximity notifications for your transit routes</p>
         </header>
 
-        <div class="main-layout" style="grid-template-columns: 1fr; max-width: 600px; margin: 0 auto;">
-            <button id="openCreateModalBtn" style="padding: 16px; font-size: 16px; margin-bottom: 8px;">
+        <div class="main-layout tracker-main-layout">
+            <button id="openCreateModalBtn" class="create-tracker-btn">
                 ➕ Track New Transit Route
             </button>
 
@@ -52,13 +52,13 @@ function openCreateModal() {
 
     // 1. Transform the generic modal into the configuration form
     modalIcon.innerText = "🔔";
-    modalIcon.style.background = "rgba(0, 98, 204, 0.1)";
-    modalIcon.style.color = "var(--primary)";
+    modalIcon.classList.remove('modal-icon-delete');
+    modalIcon.classList.add('modal-icon-create');
     modalTitle.innerText = "Configure Alert Trigger";
 
     // Inject the select structure directly into the message body area
     modalMessage.innerHTML = `
-        <div class="card" style="box-shadow: none; padding: 10px 0 0 0; border: none; text-align: left;">
+        <div class="card modal-form-container">
             <div class="form-group">
                 <label for="stopId">1. Select Stop Location</label>
                 <select id="stopId" placeholder="Search or select Stop ID...">
@@ -80,14 +80,14 @@ function openCreateModal() {
                     <option value="30">30 mins</option>
                 </select>
             </div>
-            <p id="status" style="margin-top: 10px;">Select parameters to begin tracking.</p>
+            <p id="status" class="status-message">Select parameters to begin tracking.</p>
         </div>
     `;
 
     // Swap original operational buttons for the creation workflow
     modalButtons.innerHTML = `
         <button id="modalCancelBtn" class="btn-modal-cancel">Cancel</button>
-        <button id="submitBtn" class="btn-modal-confirm" style="background: var(--primary); box-shadow: 0 4px 12px rgba(0, 98, 204, 0.2);">Set 5-Min Smart Alert</button>
+        <button id="submitBtn" class="btn-modal-confirm submit-btn-primary">Set 5-Min Smart Alert</button>
     `;
 
     // 2. Initialize TomSelect features after elements are rendered inside the modal DOM
@@ -179,17 +179,20 @@ async function requestAndRegisterAlert() {
     const statusText = document.getElementById('status');
 
     if (!stopId || !routeId || !leadTime) {
-        statusText.style.color = "var(--error)";
+        statusText.classList.add('status-error');
+        statusText.classList.remove('status-main', 'status-success');
         statusText.innerText = "⚠️ Missing required configurations.";
         return;
     }
 
     try {
-        statusText.style.color = "var(--text-main)";
+        statusText.classList.add('status-main');
+        statusText.classList.remove('status-error', 'status-success');
         statusText.innerText = "🔄 Requesting permissions...";
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
-            statusText.style.color = "var(--error)";
+            statusText.classList.add('status-error');
+            statusText.classList.remove('status-main', 'status-success');
             statusText.innerText = "❌ System permission denied.";
             return;
         }
@@ -219,7 +222,8 @@ async function requestAndRegisterAlert() {
         });
 
         if (response.ok) {
-            statusText.style.color = "var(--success)";
+            statusText.classList.add('status-success');
+            statusText.classList.remove('status-error', 'status-main');
             statusText.innerText = `✅ Tracking active!`;
             setTimeout(() => {
                 closeConfirmModal();
@@ -236,7 +240,7 @@ async function requestAndRegisterAlert() {
 async function fetchAndDisplayAlerts() {
     const alertsContainer = document.getElementById('alertsContainer');
     if(!alertsContainer) return;
-    alertsContainer.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">🔄 Loading watch alerts...</div>';
+    alertsContainer.innerHTML = '<div class="loading-indicator">🔄 Loading watch alerts...</div>';
 
     try {
         const response = await fetch(ALERTS_ENDPOINT, {
@@ -250,10 +254,10 @@ async function fetchAndDisplayAlerts() {
         // 2. If no trackers are present, dynamically inject the Info Card layout from About
         if (alerts.length === 0) {
             alertsContainer.innerHTML = `
-                <div class="empty-watchlist" style="margin-bottom: 20px; color: var(--text-muted);">
+                <div class="empty-watchlist">
                     No active tracking routes found.
                 </div>
-                <div style="text-align: left;">
+                <div class="empty-watchlist-text">
                     ${About.render()}
                 </div>
             `;
@@ -264,7 +268,7 @@ async function fetchAndDisplayAlerts() {
             <div class="alert-item">
                 <div>
                     <div class="alert-info-title">Stop ${alert.stop_id}</div>
-                    <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Route ${alert.route_id} (${alert.lead_time || 5} min window)</div>
+                    <div class="alert-subtitle">Route ${alert.route_id} (${alert.lead_time || 5} min window)</div>
                 </div>
                 <div class="alert-actions">
                     <button class="btn-delete" data-pk="${alert.stop_id}_${alert.route_id}" data-sk="${getOrCreateBrowserId()}" data-stop="${alert.stop_id}" data-route="${alert.route_id}">Delete</button>
@@ -272,7 +276,7 @@ async function fetchAndDisplayAlerts() {
             </div>
         `).join('');
     } catch (e) {
-        alertsContainer.innerHTML = '<div style="text-align:center;color:var(--error);">⚠️ Error loading watchlist feed.</div>';
+        alertsContainer.innerHTML = '<div class="error-indicator">⚠️ Error loading watchlist feed.</div>';
     }
 }
 
@@ -287,8 +291,8 @@ function handleAlertContainerClick(e) {
 
     // Revert/Setup modal elements to the generic Delete verification configuration
     modalIcon.innerText = "⚠️";
-    modalIcon.style.background = "var(--delete-bg)";
-    modalIcon.style.color = "var(--delete-text)";
+    modalIcon.classList.remove('modal-icon-create');
+    modalIcon.classList.add('modal-icon-delete');
     modalTitle.innerText = "Remove Alert Tracker";
     modalMessage.innerText = `Are you sure you want to stop tracking Route ${pendingDeletionTarget.getAttribute('data-route')} at Stop ${pendingDeletionTarget.getAttribute('data-stop')}?`;
 

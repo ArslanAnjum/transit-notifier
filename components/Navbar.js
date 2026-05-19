@@ -1,7 +1,7 @@
 const Navbar = {
     render: () => `
         <nav class="global-nav">
-            <div class="nav-brand">Next-Upp</div>
+            <div class="nav-brand">NexxtUp</div>
             <div class="nav-links">
                 <a href="#/">Home</a>
                 <a href="#/sponsors">Local Perks</a>

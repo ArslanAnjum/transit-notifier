@@ -1,9 +1,10 @@
 const Navbar = {
     render: () => `
         <nav class="global-nav">
-            <div class="nav-brand">NexxtUp</div>
+            <div class="nav-brand">
+                <a href="#/">NexxtUp</a>
+            </div>
             <div class="nav-links">
-                <a href="#/">Home</a>
                 <a href="#/sponsors">Local Perks</a>
                 <a href="#/about">How it Works</a>
             </div>

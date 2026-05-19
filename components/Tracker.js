@@ -253,15 +253,8 @@ async function fetchAndDisplayAlerts() {
                 <div class="empty-watchlist" style="margin-bottom: 20px; color: var(--text-muted);">
                     No active tracking routes found.
                 </div>
-                <div class="card info-card" style="text-align: left;">
-                    <h3>1. Selection & Registration</h3>
-                    <p>Choose your regular daily stop numbers and route intervals. Our system registers an encrypted handshake utilizing secure Browser Push notifications APIs.</p>
-
-                    <h3>2. Predictive Tracking</h3>
-                    <p>Our server-side cloud infrastructure continually references Halifax Transit scheduling real-time positioning feeds against your custom proximity parameters.</p>
-
-                    <h3>3. Instant Delivery</h3>
-                    <p>Even if your phone is resting in your pocket or the browser app is completely closed down, the active system worker pushes a native OS alert to ensure you walk out exactly on time.</p>
+                <div style="text-align: left;">
+                    ${About.render()}
                 </div>
             `;
             return;
@@ -274,7 +267,6 @@ async function fetchAndDisplayAlerts() {
                     <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Route ${alert.route_id} (${alert.lead_time || 5} min window)</div>
                 </div>
                 <div class="alert-actions">
-                    <span class="alert-tag ${alert.status ? 'tag-active' : 'tag-inactive'}">${alert.status ? 'Active' : 'Inactive'}</span>
                     <button class="btn-delete" data-pk="${alert.stop_id}_${alert.route_id}" data-sk="${getOrCreateBrowserId()}" data-stop="${alert.stop_id}" data-route="${alert.route_id}">Delete</button>
                 </div>
             </div>

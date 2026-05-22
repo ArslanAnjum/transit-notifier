@@ -135,21 +135,32 @@ async function loadAndDisplayVehicle(alert, sk) {
             const vehicleInfo = bestMatch.vehicleInfo;
             const position = vehicleInfo.position;
 
-            // Update marker on map
-            if (currentMarker) {
-                currentMarker.setLatLng([position.latitude, position.longitude]);
-            } else {
-                currentMarker = L.marker([position.latitude, position.longitude], {
-                    icon: L.icon({
-                        iconUrl: 'https://cdn-icons-png.flaticon.com/512/929/929502.png',
-                        iconSize: [32, 32],
-                        popupAnchor: [0, -16]
-                    })
-                }).addTo(currentMap);
-            }
+            // Validate vehicle data before displaying
+            if (position && bestMatch.tripId && bestMatch.invalid_after_stop_sequence !== undefined &&
+                vehicleInfo.current_stop_sequence <= bestMatch.invalid_after_stop_sequence) {
 
-            // Center map on vehicle
-            currentMap.setView([position.latitude, position.longitude], 15);
+                // Update marker on map
+                if (currentMarker) {
+                    currentMarker.setLatLng([position.latitude, position.longitude]);
+                } else {
+                    currentMarker = L.marker([position.latitude, position.longitude], {
+                        icon: L.icon({
+                            iconUrl: 'https://cdn-icons-png.flaticon.com/512/929/929502.png',
+                            iconSize: [32, 32],
+                            popupAnchor: [0, -16]
+                        })
+                    }).addTo(currentMap);
+                }
+
+                // Center map on vehicle
+                currentMap.setView([position.latitude, position.longitude], 15);
+            } else {
+                // Remove marker if validation fails
+                if (currentMarker && currentMap) {
+                    currentMap.removeLayer(currentMarker);
+                    currentMarker = null;
+                }
+            }
 
             // Display vehicle information
             vehicleDetails.innerHTML = `
@@ -185,9 +196,9 @@ async function loadAndDisplayVehicle(alert, sk) {
 
             vehiclePanel.style.display = 'block';
 
-            // Set up refresh interval
+            // Set up refresh interval to update vehicle position every 15 seconds
             if (refreshInterval) clearInterval(refreshInterval);
-            refreshInterval = setInterval(() => updateVehiclePosition(alert, bestMatch), 5000);
+            refreshInterval = setInterval(() => updateVehiclePosition(alert, bestMatch), 15000);
         } else {
             vehicleDetails.innerHTML = '<p class="warning">🚌 No vehicles found for this route</p>';
             vehiclePanel.style.display = 'block';
@@ -225,22 +236,71 @@ async function updateVehiclePosition(alert, matchInfo) {
 
         // Find the vehicle by trip ID if we have it
         const vehicleInfo = vehicleData[matchInfo.tripId];
+        const vehicleDetails = document.getElementById('vehicleDetails');
 
-        if (vehicleInfo && vehicleInfo.position) {
+        // Validate all required conditions
+        if (vehicleInfo && vehicleInfo.position && matchInfo.tripId &&
+            matchInfo.invalid_after_stop_sequence !== undefined &&
+            vehicleInfo.current_stop_sequence <= matchInfo.invalid_after_stop_sequence) {
+
             const position = vehicleInfo.position;
 
-            // Check if vehicle is still within valid stop sequence
-            if (vehicleInfo.current_stop_sequence <= matchInfo.invalid_after_stop_sequence) {
-                // Update marker position
-                if (currentMarker) {
-                    currentMarker.setLatLng([position.latitude, position.longitude]);
-                }
+            // Update marker position on map
+            if (currentMarker) {
+                currentMarker.setLatLng([position.latitude, position.longitude]);
             } else {
-                // Vehicle has passed the stop sequence limit
-                if (currentMarker && currentMap) {
-                    currentMap.removeLayer(currentMarker);
-                    currentMarker = null;
-                }
+                currentMarker = L.marker([position.latitude, position.longitude], {
+                    icon: L.icon({
+                        iconUrl: 'https://cdn-icons-png.flaticon.com/512/929/929502.png',
+                        iconSize: [32, 32],
+                        popupAnchor: [0, -16]
+                    })
+                }).addTo(currentMap);
+            }
+
+            // Update vehicle details display
+            vehicleDetails.innerHTML = `
+                <div class="vehicle-details-grid">
+                    <div class="detail-item">
+                        <span class="label">Vehicle:</span>
+                        <span class="value">${vehicleInfo.vehicle?.label || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Position:</span>
+                        <span class="value">${position.latitude.toFixed(4)}, ${position.longitude.toFixed(4)}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Stop Sequence:</span>
+                        <span class="value">${vehicleInfo.current_stop_sequence} / ${matchInfo.invalid_after_stop_sequence}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Speed:</span>
+                        <span class="value">${position.speed ? position.speed.toFixed(1) + ' km/h' : 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Direction:</span>
+                        <span class="value">${position.bearing ? position.bearing.toFixed(0) + '°' : 'N/A'}</span>
+                    </div>
+                    ${vehicleInfo.occupancy_status ? `
+                    <div class="detail-item">
+                        <span class="label">Occupancy:</span>
+                        <span class="value">${vehicleInfo.occupancy_status}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        } else {
+            // Vehicle does not meet validation criteria - remove marker from map
+            if (currentMarker && currentMap) {
+                currentMap.removeLayer(currentMarker);
+                currentMarker = null;
+            }
+
+            // Update display to indicate vehicle not available
+            if (vehicleInfo) {
+                vehicleDetails.innerHTML = '<p class="warning">🚌 Vehicle no longer on valid route or has passed the stop</p>';
+            } else {
+                vehicleDetails.innerHTML = '<p class="warning">🚌 Vehicle data not available</p>';
             }
         }
     } catch (e) {

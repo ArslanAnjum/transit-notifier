@@ -2,11 +2,13 @@ import Navbar from './components/Navbar.js';
 import Tracker from './components/Tracker.js';
 import About from './components/About.js';
 import Sponsors from './components/Sponsors.js';
+import AlertDetail from './components/AlertDetail.js';
 
 const routes = {
     '#/': Tracker,
     '#/about': About,
-    '#/sponsors': Sponsors
+    '#/sponsors': Sponsors,
+    '#/alert-detail': AlertDetail
 };
 
 function router() {

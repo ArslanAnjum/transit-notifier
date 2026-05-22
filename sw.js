@@ -28,8 +28,7 @@ self.addEventListener('push', function(event) {
                 sk: sk
             },
             actions: [
-                { action: 'delete_tracker', title: '🛑 Stop Tracking' },
-                { action: 'close', title: 'Dismiss' }
+                { action: 'view_details', title: '📍 View Details' }
             ]
         };
 
@@ -49,36 +48,26 @@ self.addEventListener('notificationclick', function(event) {
     // Instantly close the operating system notification popup overlay
     notification.close();
 
-    if (action === 'delete_tracker') {
-        const pk = notification.data.pk;
-        const sk = notification.data.sk;
-        const DELETE_ENDPOINT = "https://bvdsmrpxu2sw3uyqduczxxvyyq0xshms.lambda-url.ca-central-1.on.aws/";
+    const pk = notification.data.pk;
+    const sk = notification.data.sk;
 
-        if (!pk || !sk) {
-            console.error("Cannot delete tracking target: missing identifier keys (pk/sk) in notification payload data context.");
-            return;
+    if (action === 'view_details' || !action) {
+        // Open the alert detail page with pk and sk as URL parameters
+        if (pk && sk) {
+            event.waitUntil(
+                clients.matchAll({ type: 'window' }).then(clientList => {
+                    // Check if a window with this page is already open
+                    for (let client of clientList) {
+                        if (client.url.includes('#/alert-detail') && client.focus) {
+                            return client.focus();
+                        }
+                    }
+                    // Otherwise open a new window
+                    if (clients.openWindow) {
+                        return clients.openWindow(`#/alert-detail?pk=${encodeURIComponent(pk)}&sk=${encodeURIComponent(sk)}`);
+                    }
+                })
+            );
         }
-
-        // Keep the service worker alive in the background while it executes the fetch request
-        event.waitUntil(
-            fetch(DELETE_ENDPOINT, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pk, sk })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response returned server error code.');
-                console.log(`Successfully deleted tracking alert matching: ${pk}`);
-
-                // OPTIONAL: Send a local verification banner showing confirmation of removal
-                return self.registration.showNotification("Alert Cancelled", {
-                    body: "You've successfully unsubscribed from this route's tracking watchlist.",
-                    icon: 'https://www.halifax.ca/themes/custom/halifax/logo.svg'
-                });
-            })
-            .catch(err => {
-                console.error("Failed background notification removal transaction:", err);
-            })
-        );
     }
 });

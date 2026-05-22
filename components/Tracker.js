@@ -265,8 +265,8 @@ async function fetchAndDisplayAlerts() {
         }
 
         alertsContainer.innerHTML = alerts.map(alert => `
-            <div class="alert-item">
-                <div>
+            <div class="alert-item" data-pk="${alert.stop_id}_${alert.route_id}" data-sk="${getOrCreateBrowserId()}">
+                <div class="alert-content">
                     <div class="alert-info-title">Stop ${alert.stop_id}</div>
                     <div class="alert-subtitle">Route ${alert.route_id} (${alert.lead_time || 5} min window)</div>
                 </div>
@@ -275,6 +275,18 @@ async function fetchAndDisplayAlerts() {
                 </div>
             </div>
         `).join('');
+
+        // Add click handler to alert cards for navigation to detail page
+        document.querySelectorAll('.alert-item').forEach(alertCard => {
+            alertCard.addEventListener('click', (e) => {
+                // Don't navigate if delete button was clicked
+                if (e.target.classList.contains('btn-delete')) return;
+
+                const pk = alertCard.getAttribute('data-pk');
+                const sk = alertCard.getAttribute('data-sk');
+                window.location.hash = `#/alert-detail?pk=${pk}&sk=${sk}`;
+            });
+        });
     } catch (e) {
         alertsContainer.innerHTML = '<div class="error-indicator">⚠️ Error loading watchlist feed.</div>';
     }

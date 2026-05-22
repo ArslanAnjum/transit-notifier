@@ -505,3 +505,155 @@ button:active { transform: scale(0.99); }
     color: var(--text-main);
     font-size: 14px;
 }
+
+/* Alert Detail Page Styles */
+.alert-detail-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.back-btn {
+    align-self: flex-start;
+    padding: 8px 16px;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.back-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+.alert-detail-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.alert-detail-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.alert-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.alert-detail-header h2 {
+    margin: 0 0 8px 0;
+    color: var(--dark-blue);
+    font-size: 24px;
+}
+
+.alert-detail-route {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 16px;
+}
+
+.alert-detail-meta {
+    text-align: right;
+}
+
+.alert-detail-meta p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-main);
+}
+
+.map-container {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--card-bg);
+}
+
+.vehicle-info-panel {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.vehicle-info-panel h3 {
+    margin: 0 0 16px 0;
+    color: var(--dark-blue);
+    font-size: 18px;
+}
+
+.vehicle-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    background-color: var(--bg-main);
+    border-radius: 6px;
+}
+
+.detail-item .label {
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.detail-item .value {
+    color: var(--text-main);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.vehicle-info-panel p.warning {
+    color: var(--text-muted);
+    font-size: 14px;
+    padding: 12px;
+    background-color: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    border-radius: 4px;
+    margin: 0;
+}
+
+.vehicle-info-panel p.error {
+    color: var(--delete-text);
+    font-size: 14px;
+    padding: 12px;
+    background-color: var(--delete-bg);
+    border-left: 4px solid var(--delete-text);
+    border-radius: 4px;
+    margin: 0;
+}
+
+.vehicle-info-panel .btn-delete {
+    width: 100%;
+    padding: 10px 16px;
+    background-color: var(--delete-bg);
+    color: var(--delete-text);
+    border: 1px solid var(--delete-text);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.vehicle-info-panel .btn-delete:hover {
+    background-color: var(--delete-text);
+    color: white;
+}

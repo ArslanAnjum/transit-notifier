@@ -34,7 +34,10 @@ const AlertDetail = {
             window.location.hash = '#/';
         });
 
-        const params = new URLSearchParams(window.location.search);
+        // Parse query parameters from the hash instead of search
+        const fullHash = window.location.hash || '';
+        const queryString = fullHash.split('?')[1]; // Gets everything after '?'
+        const params = new URLSearchParams(queryString);
         const pk = params.get('pk');
         const sk = params.get('sk');
 
@@ -45,6 +48,7 @@ const AlertDetail = {
                 '<div class="error-indicator">⚠️ Missing alert parameters (pk/sk)</div>';
         }
     }
+
 };
 
 async function loadAlertDetail(pk, sk) {

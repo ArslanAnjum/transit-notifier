@@ -45,26 +45,25 @@ self.addEventListener('notificationclick', function(event) {
     const notification = event.notification;
     const action = event.action;
 
-    // Instantly close the operating system notification popup overlay
     notification.close();
 
     const pk = notification.data.pk;
     const sk = notification.data.sk;
 
     if (action === 'view_details' || !action) {
-        // Open the alert detail page with pk and sk as URL parameters
         if (pk && sk) {
             event.waitUntil(
                 clients.matchAll({ type: 'window' }).then(clientList => {
-                    // Check if a window with this page is already open
                     for (let client of clientList) {
                         if (client.url.includes('#/alert-detail') && client.focus) {
                             return client.focus();
                         }
                     }
-                    // Otherwise open a new window
+
                     if (clients.openWindow) {
-                        return clients.openWindow(`#/alert-detail?pk=${encodeURIComponent(pk)}&sk=${encodeURIComponent(sk)}`);
+                        // FIX: Prepend self.location.origin and a slash to force root routing
+                        const targetUrl = `${self.location.origin}/#/alert-detail?pk=${encodeURIComponent(pk)}&sk=${encodeURIComponent(sk)}`;
+                        return clients.openWindow(targetUrl);
                     }
                 })
             );

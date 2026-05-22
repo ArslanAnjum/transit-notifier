@@ -12,26 +12,25 @@ const routes = {
 };
 
 function router() {
-    // Render Global Navigation Bar once
     const navContainer = document.getElementById('navbar-container');
     if (!navContainer.innerHTML) {
         navContainer.innerHTML = Navbar.render();
         Navbar.init?.();
     }
 
-    // Determine current route or fallback to home
-    const currentHash = window.location.hash || '#/';
+    // Extract route path without query parameters
+    const fullHash = window.location.hash || '#/';
+    const currentHash = fullHash.split('?')[0]; // Gets '#/alert-detail' from '#/alert-detail?pk=...'
     const component = routes[currentHash] || Tracker;
 
-    // Inject Component View HTML
     const appView = document.getElementById('app-view');
     appView.innerHTML = component.render();
 
-    // Trigger local lifecycle events for logic initialization
     if (component.init) {
         component.init();
     }
 }
+
 
 // Watch navigation events
 window.addEventListener('hashchange', router);
